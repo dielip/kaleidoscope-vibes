@@ -1,0 +1,87 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2575.5">
+  <style type="text/css">
+    body {background-color: #000000}
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; color: #000000; background-color: #ffffff}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; color: #000000; background-color: #ffffff; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8" /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;Kaleidoscope Vibes&lt;/title&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>html, body {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>margin: 0;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>overflow: hidden;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>background: black;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>canvas {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>display: block;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let scene = new THREE.Scene();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let camera = new THREE.Camera();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let renderer = new THREE.WebGLRenderer();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>renderer.setSize(window.innerWidth, window.innerHeight);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>document.body.appendChild(renderer.domElement);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>let uniforms = {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>iTime: { value: 0 },</p>
+<p class="p1"><span class="Apple-converted-space">      </span>iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>let material = new THREE.ShaderMaterial({</p>
+<p class="p1"><span class="Apple-converted-space">      </span>uniforms: uniforms,</p>
+<p class="p1"><span class="Apple-converted-space">      </span>fragmentShader: `</p>
+<p class="p1"><span class="Apple-converted-space">        </span>precision mediump float;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>uniform float iTime;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>uniform vec2 iResolution;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>void main() {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>vec2 uv = (gl_FragCoord.xy - 0.5 * iResolution.xy) / iResolution.y;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>float r = length(uv);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>float a = atan(uv.y, uv.x);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>int symmetry = 8;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>a = mod(a, 6.283185 / float(symmetry));</p>
+<p class="p1"><span class="Apple-converted-space">          </span>a = abs(a - 3.141592 / float(symmetry));</p>
+<p class="p1"><span class="Apple-converted-space">          </span>uv = vec2(cos(a), sin(a)) * r;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>float color = 0.5 + 0.5 * cos(10.0 * uv.x + iTime)</p>
+<p class="p1"><span class="Apple-converted-space">                                  </span>* sin(10.0 * uv.y + iTime * 0.5);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>gl_FragColor = vec4(vec3(color), 1.0);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>`</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>let geometry = new THREE.PlaneBufferGeometry(2, 2);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let mesh = new THREE.Mesh(geometry, material);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>scene.add(mesh);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>function animate(time) {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>uniforms.iTime.value = time * 0.001;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>renderer.render(scene, camera);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>requestAnimationFrame(animate);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>animate();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
