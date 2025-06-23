@@ -34,7 +34,7 @@
 <p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"&gt;&lt;/script&gt;</p>
 <p class="p1"><span class="Apple-converted-space">  </span>&lt;script&gt;</p>
 <p class="p1"><span class="Apple-converted-space">    </span>let scene = new THREE.Scene();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>let camera = new THREE.Camera();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);</p>
 <p class="p1"><span class="Apple-converted-space">    </span>let renderer = new THREE.WebGLRenderer();</p>
 <p class="p1"><span class="Apple-converted-space">    </span>renderer.setSize(window.innerWidth, window.innerHeight);</p>
 <p class="p1"><span class="Apple-converted-space">    </span>document.body.appendChild(renderer.domElement);</p>
