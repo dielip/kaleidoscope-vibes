@@ -31,13 +31,28 @@
       colorIndex: { value: 0 }
     };
 
+    // Mouse move updates iMouse uniform
     window.addEventListener('mousemove', (e) => {
       uniforms.iMouse.value.x = e.clientX;
       uniforms.iMouse.value.y = window.innerHeight - e.clientY;
     });
 
+    // Click cycles colors
     window.addEventListener('click', () => {
-      uniforms.colorIndex.value = (uniforms.colorIndex.value + 1) % 3; // cycle 0,1,2
+      uniforms.colorIndex.value = (uniforms.colorIndex.value + 1) % 3;
+    });
+
+    // Touch move updates iMouse uniform (first finger only)
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 0) {
+        uniforms.iMouse.value.x = e.touches[0].clientX;
+        uniforms.iMouse.value.y = window.innerHeight - e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    // Touch start cycles colors
+    window.addEventListener('touchstart', () => {
+      uniforms.colorIndex.value = (uniforms.colorIndex.value + 1) % 3;
     });
 
     let material = new THREE.ShaderMaterial({
@@ -92,6 +107,13 @@
     }
 
     animate();
+
+    // Update renderer size and resolution on window resize
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      uniforms.iResolution.value.x = window.innerWidth;
+      uniforms.iResolution.value.y = window.innerHeight;
+    });
   </script>
 </body>
 </html>
