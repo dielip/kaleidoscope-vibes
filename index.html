@@ -42,6 +42,7 @@
     let touchEndX = 0;
     let touchEndY = 0;
     const minSwipeDistance = 30; // pixels
+    const totalColors = 8; // updated to 8 colors total
 
     // Mouse move updates iMouse uniform
     window.addEventListener('mousemove', (e) => {
@@ -51,7 +52,7 @@
 
     // Click cycles colors forward
     window.addEventListener('click', () => {
-      uniforms.colorIndex.value = mod(uniforms.colorIndex.value + 1, 6);
+      uniforms.colorIndex.value = mod(uniforms.colorIndex.value + 1, totalColors);
     });
 
     // Touch start - record start position
@@ -80,8 +81,8 @@
         let dy = touchEndY - touchStartY;
 
         if (Math.abs(dx) < minSwipeDistance && Math.abs(dy) < minSwipeDistance) {
-          // Consider this a tap if swipe distance too small
-          uniforms.colorIndex.value = mod(uniforms.colorIndex.value + 1, 6);
+          // Tap detected - cycle 1 forward
+          uniforms.colorIndex.value = mod(uniforms.colorIndex.value + 1, totalColors);
           return;
         }
 
@@ -89,42 +90,25 @@
           // Horizontal swipe
           if (dx > 0) {
             // Swipe right: next color
-            uniforms.colorIndex.value = mod(uniforms.colorIndex.value + 1, 6);
+            uniforms.colorIndex.value = mod(uniforms.colorIndex.value + 1, totalColors);
           } else {
             // Swipe left: previous color
-            uniforms.colorIndex.value = mod(uniforms.colorIndex.value - 1, 6);
+            uniforms.colorIndex.value = mod(uniforms.colorIndex.value - 1, totalColors);
           }
         } else {
           // Vertical swipe
           if (dy > 0) {
             // Swipe down: skip 2 colors forward
-            uniforms.colorIndex.value = mod(uniforms.colorIndex.value + 2, 6);
+            uniforms.colorIndex.value = mod(uniforms.colorIndex.value + 2, totalColors);
           } else {
             // Swipe up: skip 2 colors backward
-            uniforms.colorIndex.value = mod(uniforms.colorIndex.value - 2, 6);
+            uniforms.colorIndex.value = mod(uniforms.colorIndex.value - 2, totalColors);
           }
         }
       }
     });
 
-    // Define color palettes - 6 total colors
-    function getColor(val, index) {
-      if (index === 0) {
-        return new THREE.Vector3(0.5 + 0.5 * Math.cos(6.2831 * val), 0.3, 0.8);
-      } else if (index === 1) {
-        return new THREE.Vector3(0.2, 0.7 + 0.3 * val, 0.3 + 0.7 * val);
-      } else if (index === 2) {
-        return new THREE.Vector3(0.9 - 0.8 * val, 0.4, 0.1 + 0.9 * val);
-      } else if (index === 3) {
-        return new THREE.Vector3(0.8, 0.5 + 0.5 * val, 0.2);
-      } else if (index === 4) {
-        return new THREE.Vector3(0.1, 0.6, 0.6 + 0.4 * val);
-      } else {
-        return new THREE.Vector3(0.4 + 0.6 * val, 0.2, 0.7);
-      }
-    }
-
-    // GLSL version of getColor using arrays for efficiency
+    // GLSL fragment shader with 8 color palettes
     const fragmentShader = `
       precision mediump float;
       uniform float iTime;
@@ -143,8 +127,12 @@
           return vec3(0.8, 0.5 + 0.5 * val, 0.2);
         } else if (index == 4) {
           return vec3(0.0, 0.8 * (1.0 - val), 0.4 + 0.6 * val);
-        } else {
+        } else if (index == 5) {
           return vec3(0.4 + 0.6 * val, 0.2, 0.7);
+        } else if (index == 6) {
+          return vec3(0.7, 0.3 + 0.7 * val, 0.3 + 0.4 * val);
+        } else {
+          return vec3(0.1 + 0.7 * val, 0.6, 0.2 + 0.6 * val);
         }
       }
 
@@ -186,10 +174,4 @@
     animate();
 
     window.addEventListener('resize', () => {
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      uniforms.iResolution.value.x = window.innerWidth;
-      uniforms.iResolution.value.y = window.innerHeight;
-    });
-  </script>
-</body>
-</html>
+      renderer.setSize(window.i
