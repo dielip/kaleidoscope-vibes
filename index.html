@@ -28,10 +28,9 @@
       iTime: { value: 0 },
       iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
       iMouse: { value: new THREE.Vector2(0.0, 0.0) },
-      colorIndex: { value: 0 }
+      colorIndex: { value: 0.0 }  // float now
     };
 
-    // Helper function to cycle color index safely
     function mod(n, m) {
       return ((n % m) + m) % m;
     }
@@ -41,137 +40,19 @@
     let touchStartY = 0;
     let touchEndX = 0;
     let touchEndY = 0;
-    const minSwipeDistance = 30; // pixels
-    const totalColors = 8; // updated to 8 colors total
+    const minSwipeDistance = 30;
 
-    // Mouse move updates iMouse uniform
     window.addEventListener('mousemove', (e) => {
       uniforms.iMouse.value.x = e.clientX;
       uniforms.iMouse.value.y = window.innerHeight - e.clientY;
     });
 
-    // Click cycles colors forward
     window.addEventListener('click', () => {
-      uniforms.colorIndex.value = mod(uniforms.colorIndex.value + 1, totalColors);
+      uniforms.colorIndex.value = mod(uniforms.colorIndex.value + 1, 7);
     });
 
-    // Touch start - record start position
     window.addEventListener('touchstart', (e) => {
       if (e.touches.length > 0) {
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
       }
-    }, { passive: true });
-
-    // Touch move updates iMouse uniform
-    window.addEventListener('touchmove', (e) => {
-      if (e.touches.length > 0) {
-        uniforms.iMouse.value.x = e.touches[0].clientX;
-        uniforms.iMouse.value.y = window.innerHeight - e.touches[0].clientY;
-      }
-    }, { passive: true });
-
-    // Touch end - detect swipe direction and act accordingly
-    window.addEventListener('touchend', (e) => {
-      if (e.changedTouches.length > 0) {
-        touchEndX = e.changedTouches[0].clientX;
-        touchEndY = e.changedTouches[0].clientY;
-
-        let dx = touchEndX - touchStartX;
-        let dy = touchEndY - touchStartY;
-
-        if (Math.abs(dx) < minSwipeDistance && Math.abs(dy) < minSwipeDistance) {
-          // Tap detected - cycle 1 forward
-          uniforms.colorIndex.value = mod(uniforms.colorIndex.value + 1, totalColors);
-          return;
-        }
-
-        if (Math.abs(dx) > Math.abs(dy)) {
-          // Horizontal swipe
-          if (dx > 0) {
-            // Swipe right: next color
-            uniforms.colorIndex.value = mod(uniforms.colorIndex.value + 1, totalColors);
-          } else {
-            // Swipe left: previous color
-            uniforms.colorIndex.value = mod(uniforms.colorIndex.value - 1, totalColors);
-          }
-        } else {
-          // Vertical swipe
-          if (dy > 0) {
-            // Swipe down: skip 2 colors forward
-            uniforms.colorIndex.value = mod(uniforms.colorIndex.value + 2, totalColors);
-          } else {
-            // Swipe up: skip 2 colors backward
-            uniforms.colorIndex.value = mod(uniforms.colorIndex.value - 2, totalColors);
-          }
-        }
-      }
-    });
-
-    // GLSL fragment shader with 8 color palettes
-    const fragmentShader = `
-      precision mediump float;
-      uniform float iTime;
-      uniform vec2 iResolution;
-      uniform vec2 iMouse;
-      uniform int colorIndex;
-
-      vec3 getColor(float val, int index) {
-        if (index == 0) {
-          return vec3(0.5 + 0.5 * cos(6.2831 * val), 0.3, 0.8);
-        } else if (index == 1) {
-          return vec3(0.2, 0.7 + 0.3 * val, 0.3 + 0.7 * val);
-        } else if (index == 2) {
-          return vec3(0.9 - 0.8 * val, 0.4, 0.1 + 0.9 * val);
-        } else if (index == 3) {
-          return vec3(0.8, 0.5 + 0.5 * val, 0.2);
-        } else if (index == 4) {
-          return vec3(0.0, 0.8 * (1.0 - val), 0.4 + 0.6 * val);
-        } else if (index == 5) {
-          return vec3(0.4 + 0.6 * val, 0.2, 0.7);
-        } else if (index == 6) {
-          return vec3(0.7, 0.3 + 0.7 * val, 0.3 + 0.4 * val);
-        } else {
-          return vec3(0.1 + 0.7 * val, 0.6, 0.2 + 0.6 * val);
-        }
-      }
-
-      void main() {
-        vec2 uv = (gl_FragCoord.xy - 0.5 * iResolution.xy) / iResolution.y;
-        vec2 mouse = (iMouse - 0.5 * iResolution.xy) / iResolution.y;
-
-        float r = length(uv);
-        float a = atan(uv.y, uv.x);
-
-        int symmetry = 8;
-        a = mod(a, 6.283185 / float(symmetry));
-        a = abs(a - 3.141592 / float(symmetry));
-        uv = vec2(cos(a), sin(a)) * r;
-
-        float pulse = sin(length(uv - mouse) * 10.0 - iTime);
-        float colorVal = 0.5 + 0.5 * pulse;
-
-        vec3 col = getColor(colorVal, colorIndex);
-
-        gl_FragColor = vec4(col, 1.0);
-      }
-    `;
-
-    let material = new THREE.ShaderMaterial({
-      uniforms: uniforms,
-      fragmentShader: fragmentShader
-    });
-
-    let geometry = new THREE.PlaneBufferGeometry(2, 2);
-    let mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
-
-    function animate(time) {
-      uniforms.iTime.value = time * 0.001;
-      renderer.render(scene, camera);
-      requestAnimationFrame(animate);
-    }
-    animate();
-
-    window.addEventListener('resize', () => {
-      renderer.setSize(window.i
