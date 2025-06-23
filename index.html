@@ -10,29 +10,30 @@
       overflow: hidden;
       background: black;
     }
-    canvas { display: block; }
+    canvas {
+      display: block;
+    }
   </style>
 </head>
 <body>
-  <!-- Three.js library -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
-
-  <!-- Main app script -->
   <script>
-    alert("JS is running");  // should pop up immediately
-
-    console.log('Script start');
     let scene = new THREE.Scene();
     let camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     let renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
-    console.log('Renderer and camera set up');
 
     let uniforms = {
       iTime: { value: 0 },
-      iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+      iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+      iMouse: { value: new THREE.Vector2(0.0, 0.0) }
     };
+
+    window.addEventListener('mousemove', (e) => {
+      uniforms.iMouse.value.x = e.clientX;
+      uniforms.iMouse.value.y = window.innerHeight - e.clientY;
+    });
 
     let material = new THREE.ShaderMaterial({
       uniforms: uniforms,
@@ -40,34 +41,39 @@
         precision mediump float;
         uniform float iTime;
         uniform vec2 iResolution;
+        uniform vec2 iMouse;
 
         void main() {
           vec2 uv = (gl_FragCoord.xy - 0.5 * iResolution.xy) / iResolution.y;
+          vec2 mouse = (iMouse - 0.5 * iResolution.xy) / iResolution.y;
+
           float r = length(uv);
           float a = atan(uv.y, uv.x);
+
           int symmetry = 8;
           a = mod(a, 6.283185 / float(symmetry));
           a = abs(a - 3.141592 / float(symmetry));
           uv = vec2(cos(a), sin(a)) * r;
-          float color = 0.5 + 0.5 * cos(10.0 * uv.x + iTime)
-                                  * sin(10.0 * uv.y + iTime * 0.5);
+
+          float pulse = sin(length(uv - mouse) * 10.0 - iTime);
+          float color = 0.5 + 0.5 * pulse;
+
           gl_FragColor = vec4(vec3(color), 1.0);
         }
       `
     });
 
-    let geometry = new THREE.PlaneGeometry(2, 2);
+    let geometry = new THREE.PlaneBufferGeometry(2, 2);
     let mesh = new THREE.Mesh(geometry, material);
     scene.add(mesh);
-    console.log('Scene setup done');
 
     function animate(time) {
       uniforms.iTime.value = time * 0.001;
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
     }
+
     animate();
-    console.log('Animation started');
   </script>
 </body>
 </html>
