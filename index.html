@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+=<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -52,27 +52,48 @@
     iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
     iMouse: { value: new THREE.Vector2(0, 0) },
     zoom: { value: 1.0 },
-    iTexture: { value: texture }
+    iTexture: { value: texture },
+    spinOffset: { value: 0.0 }
   };
 
   let lastDist = null;
+  let lastX = null;
 
+  // Mouse interaction
   window.addEventListener('mousemove', e => {
     uniforms.iMouse.value.x = e.clientX;
     uniforms.iMouse.value.y = window.innerHeight - e.clientY;
+  });
+
+  window.addEventListener('mousedown', e => {
+    lastX = e.clientX;
+  });
+
+  window.addEventListener('mouseup', () => {
+    lastX = null;
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (e.buttons === 1 && lastX !== null) {
+      const dx = e.clientX - lastX;
+      uniforms.spinOffset.value += dx * 0.005; // adjust rotation speed sensitivity
+      lastX = e.clientX;
+    }
   });
 
   window.addEventListener('touchstart', e => {
     if (e.touches.length === 1) {
       uniforms.iMouse.value.x = e.touches[0].clientX;
       uniforms.iMouse.value.y = window.innerHeight - e.touches[0].clientY;
+      lastX = e.touches[0].clientX;
     }
   }, { passive: true });
 
   window.addEventListener('touchmove', e => {
-    if (e.touches.length === 1) {
-      uniforms.iMouse.value.x = e.touches[0].clientX;
-      uniforms.iMouse.value.y = window.innerHeight - e.touches[0].clientY;
+    if (e.touches.length === 1 && lastX !== null) {
+      const dx = e.touches[0].clientX - lastX;
+      uniforms.spinOffset.value += dx * 0.005;
+      lastX = e.touches[0].clientX;
     }
     if (e.touches.length === 2) {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -91,6 +112,7 @@
   window.addEventListener('touchend', e => {
     if (e.touches.length < 2) {
       lastDist = null;
+      lastX = null;
     }
   });
 
@@ -101,13 +123,14 @@
     uniform vec2 iMouse;
     uniform float zoom;
     uniform sampler2D iTexture;
+    uniform float spinOffset;
 
     void main() {
       vec2 uv = (gl_FragCoord.xy - 0.5 * iResolution.xy) / (iResolution.y * zoom);
       vec2 mouse = (iMouse - 0.5 * iResolution.xy) / (iResolution.y * zoom);
 
       float r = length(uv);
-      float a = atan(uv.y, uv.x) + 0.2 * iTime; // Add slow spin animation
+      float a = atan(uv.y, uv.x) + 0.6 * iTime + spinOffset; // faster spin + gesture offset
 
       float symmetry = 8.0;
       a = mod(a, 6.283185 / symmetry);
