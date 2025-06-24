@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Kaleidoscope Rainbow</title>
+  <title>Kaleidoscope with Image</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     html, body {
@@ -16,9 +16,28 @@
     canvas {
       display: block;
     }
+    #saveButton, #uploadInput {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+      background: rgba(255,255,255,0.8);
+      border: none;
+      padding: 10px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    #uploadInput {
+      top: 50px;
+      left: 10px;
+      padding: 5px;
+    }
   </style>
 </head>
 <body>
+<button id="saveButton">Save Image</button>
+<input type="file" accept="image/*" id="uploadInput" />
 <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
 <script>
   let scene = new THREE.Scene();
@@ -27,11 +46,13 @@
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
+  let texture = new THREE.Texture();
   let uniforms = {
     iTime: { value: 0 },
     iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
     iMouse: { value: new THREE.Vector2(0, 0) },
-    zoom: { value: 1.0 }
+    zoom: { value: 1.0 },
+    iTexture: { value: texture }
   };
 
   let lastDist = null;
@@ -79,17 +100,7 @@
     uniform vec2 iResolution;
     uniform vec2 iMouse;
     uniform float zoom;
-
-    vec3 getColor(float val) {
-      float red = 0.5 + 0.5 * cos(6.2831 * val + 0.0);
-      float orange = 0.5 + 0.5 * cos(6.2831 * val + 0.4);
-      float yellow = 0.5 + 0.5 * cos(6.2831 * val + 0.8);
-      float green = 0.5 + 0.5 * cos(6.2831 * val + 1.2);
-      float cyan = 0.5 + 0.5 * cos(6.2831 * val + 1.6);
-      float blue = 0.5 + 0.5 * cos(6.2831 * val + 2.0);
-      float violet = 0.5 + 0.5 * cos(6.2831 * val + 2.4);
-      return vec3((red + violet) / 2.0, (orange + green) / 2.0, (cyan + blue) / 2.0);
-    }
+    uniform sampler2D iTexture;
 
     void main() {
       vec2 uv = (gl_FragCoord.xy - 0.5 * iResolution.xy) / (iResolution.y * zoom);
@@ -103,12 +114,11 @@
       a = abs(a - 3.141592 / symmetry);
       uv = vec2(cos(a), sin(a)) * r;
 
-      float pulse = sin(length(uv - mouse) * 10.0 - iTime);
-      float colorVal = 0.5 + 0.5 * pulse;
+      // Scale UV into texture space
+      vec2 texCoord = 0.5 + uv;
+      vec4 col = texture2D(iTexture, texCoord);
 
-      vec3 col = getColor(colorVal);
-
-      gl_FragColor = vec4(col, 1.0);
+      gl_FragColor = col;
     }
   `;
 
@@ -132,6 +142,26 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     uniforms.iResolution.value.x = window.innerWidth;
     uniforms.iResolution.value.y = window.innerHeight;
+  });
+
+  // === Image Upload Handling ===
+  document.getElementById('uploadInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const img = new Image();
+    img.onload = () => {
+      texture.image = img;
+      texture.needsUpdate = true;
+    };
+    img.src = URL.createObjectURL(file);
+  });
+
+  // === Save Image Button ===
+  document.getElementById('saveButton').addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.download = 'kaleidoscope_snapshot.png';
+    link.href = renderer.domElement.toDataURL('image/png');
+    link.click();
   });
 </script>
 </body>
