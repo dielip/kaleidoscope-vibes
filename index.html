@@ -46,8 +46,8 @@
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // Create a fallback texture (white pixel) in case no image is uploaded
-  const fallbackTexture = new THREE.DataTexture(new Uint8Array([255, 255, 255]), 1, 1, THREE.RGBFormat);
+  // Create a fallback texture (white pixel with RGBA)
+  const fallbackTexture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1, THREE.RGBAFormat);
   fallbackTexture.needsUpdate = true;
 
   let texture = fallbackTexture;
@@ -65,7 +65,6 @@
   let lastDist = null;
   let lastX = null;
 
-  // Mouse interaction
   window.addEventListener('mousedown', e => {
     lastX = e.clientX;
   });
@@ -84,7 +83,6 @@
     }
   });
 
-  // Touch interaction
   window.addEventListener('touchstart', e => {
     if (e.touches.length === 1) {
       uniforms.iMouse.value.x = e.touches[0].clientX;
@@ -157,7 +155,7 @@
   function animate() {
     spinAngle += spinSpeed * 0.016;
     uniforms.spinAngle.value = spinAngle;
-    spinSpeed *= 0.98; // friction
+    spinSpeed *= 0.98;
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
   }
