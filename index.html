@@ -66,6 +66,7 @@
   </style>
 </head>
 <body>
+<!-- Control panel at the top -->
 <div id="controls">
   <select id="modeToggle" style="width: 110px;">
     <option value="color">Color Mode</option>
@@ -74,28 +75,38 @@
   <input type="file" accept="image/*" id="uploadInput" />
   <button id="fullscreenButton">Fullscreen</button>
 </div>
+
+<!-- Controls at the bottom: symmetry + save -->
 <div id="bottomControls">
   <label for="symmetrySlider">Symmetry:</label>
   <input type="range" id="symmetrySlider" min="2" max="16" value="8" />
   <button id="saveButton">Save Image</button>
 </div>
+
+<!-- Include Three.js -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
 <script>
+  // === SETUP ===
+
+  // Initialize scene and renderer
   let scene = new THREE.Scene();
   let camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   let renderer = new THREE.WebGLRenderer({ preserveDrawingBuffer: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
+  // Fallback texture (white pixel)
   const fallbackTexture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1, THREE.RGBAFormat);
   fallbackTexture.needsUpdate = true;
 
+  // Initial values
   let texture = fallbackTexture;
   let mode = 'color';
   let spinAngle = 0;
   let spinSpeed = 0.6;
   let symmetryValue = 8;
 
+  // Shader uniforms
   let uniforms = {
     iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
     iMouse: { value: new THREE.Vector2(0, 0) },
@@ -107,27 +118,25 @@
     symmetry: { value: symmetryValue }
   };
 
+  // Touch/mouse variables
   let lastDist = null;
   let lastX = null;
 
-  window.addEventListener('mousedown', e => {
-    lastX = e.clientX;
-  });
+  // === INTERACTION HANDLERS ===
 
-  window.addEventListener('mouseup', () => {
-    lastX = null;
-  });
-
+  // Mouse drag to spin
+  window.addEventListener('mousedown', e => lastX = e.clientX);
+  window.addEventListener('mouseup', () => lastX = null);
   window.addEventListener('mousemove', e => {
     uniforms.iMouse.value.x = e.clientX;
     uniforms.iMouse.value.y = window.innerHeight - e.clientY;
     if (e.buttons === 1 && lastX !== null) {
-      const dx = e.clientX - lastX;
-      spinSpeed += dx * 0.01;
+      spinSpeed += (e.clientX - lastX) * 0.01;
       lastX = e.clientX;
     }
   });
 
+  // Touch to spin/zoom
   window.addEventListener('touchstart', e => {
     if (e.touches.length === 1) {
       uniforms.iMouse.value.x = e.touches[0].clientX;
@@ -138,8 +147,7 @@
 
   window.addEventListener('touchmove', e => {
     if (e.touches.length === 1 && lastX !== null) {
-      const dx = e.touches[0].clientX - lastX;
-      spinSpeed += dx * 0.05;
+      spinSpeed += (e.touches[0].clientX - lastX) * 0.05;
       lastX = e.touches[0].clientX;
     }
     if (e.touches.length === 2) {
@@ -147,8 +155,7 @@
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (lastDist !== null) {
-        const zoomChange = dist / lastDist;
-        uniforms.zoom.value *= zoomChange;
+        uniforms.zoom.value *= dist / lastDist;
         uniforms.zoom.value = Math.max(0.5, Math.min(3.0, uniforms.zoom.value));
       }
       lastDist = dist;
@@ -159,6 +166,8 @@
     lastDist = null;
     lastX = null;
   });
+
+  // === FRAGMENT SHADER ===
 
   const fragmentShader = `
     precision mediump float;
@@ -200,14 +209,14 @@
     }
   `;
 
-  let material = new THREE.ShaderMaterial({
-    uniforms: uniforms,
-    fragmentShader: fragmentShader
-  });
+  // === MESH SETUP ===
 
+  let material = new THREE.ShaderMaterial({ uniforms: uniforms, fragmentShader });
   let geometry = new THREE.PlaneGeometry(2, 2);
   let mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
+
+  // === ANIMATION LOOP ===
 
   function animate(time) {
     uniforms.iTime.value = time * 0.001;
@@ -219,10 +228,11 @@
   }
   animate();
 
+  // === UI CONTROLS ===
+
   window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
-    uniforms.iResolution.value.x = window.innerWidth;
-    uniforms.iResolution.value.y = window.innerHeight;
+    uniforms.iResolution.value.set(window.innerWidth, window.innerHeight);
   });
 
   document.getElementById('uploadInput').addEventListener('change', (e) => {
@@ -241,7 +251,6 @@
     mode = e.target.value;
     uniforms.mode.value = mode === 'image' ? 1 : 0;
     document.getElementById('uploadInput').style.display = (mode === 'image') ? 'inline-block' : 'none';
-    document.getElementById('symmetrySlider').style.display = 'block';
   });
 
   document.getElementById('symmetrySlider').addEventListener('input', (e) => {
@@ -257,11 +266,22 @@
     link.click();
   });
 
+  // === FULLSCREEN SUPPORT ===
+
   document.getElementById('fullscreenButton').addEventListener('click', () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(err => console.log(err));
+    const elem = document.documentElement;
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      }
     } else {
-      document.exitFullscreen();
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
     }
   });
 </script>
