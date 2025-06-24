@@ -46,7 +46,6 @@
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // Create a fallback texture (white pixel with RGBA)
   const fallbackTexture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1, THREE.RGBAFormat);
   fallbackTexture.needsUpdate = true;
 
@@ -78,7 +77,7 @@
     uniforms.iMouse.value.y = window.innerHeight - e.clientY;
     if (e.buttons === 1 && lastX !== null) {
       const dx = e.clientX - lastX;
-      spinSpeed += dx * 0.001;
+      spinSpeed += dx * 0.01; // increased from 0.001 to 0.01 for snappier response
       lastX = e.clientX;
     }
   });
@@ -94,7 +93,7 @@
   window.addEventListener('touchmove', e => {
     if (e.touches.length === 1 && lastX !== null) {
       const dx = e.touches[0].clientX - lastX;
-      spinSpeed += dx * 0.001;
+      spinSpeed += dx * 0.01; // increased from 0.001 to 0.01 for snappier response
       lastX = e.touches[0].clientX;
     }
     if (e.touches.length === 2) {
