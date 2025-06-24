@@ -72,6 +72,7 @@
     <option value="image">Image Mode</option>
   </select>
   <input type="file" accept="image/*" id="uploadInput" />
+  <button id="fullscreenButton">Fullscreen</button>
 </div>
 <div id="bottomControls">
   <label for="symmetrySlider">Symmetry:</label>
@@ -240,6 +241,7 @@
     mode = e.target.value;
     uniforms.mode.value = mode === 'image' ? 1 : 0;
     document.getElementById('uploadInput').style.display = (mode === 'image') ? 'inline-block' : 'none';
+    document.getElementById('symmetrySlider').style.display = 'block';
   });
 
   document.getElementById('symmetrySlider').addEventListener('input', (e) => {
@@ -253,6 +255,14 @@
     link.download = 'kaleidoscope_snapshot.png';
     link.href = renderer.domElement.toDataURL('image/png');
     link.click();
+  });
+
+  document.getElementById('fullscreenButton').addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => console.log(err));
+    } else {
+      document.exitFullscreen();
+    }
   });
 </script>
 </body>
