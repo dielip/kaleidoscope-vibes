@@ -20,33 +20,60 @@
       position: absolute;
       top: 10px;
       left: 10px;
-      z-index: 10;
+      right: 10px;
       display: flex;
-      flex-direction: column;
-      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      z-index: 10;
+      flex-wrap: wrap;
     }
-    button, input[type="file"], select, input[type="range"] {
+    #bottomControls {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      gap: 8px;
+    }
+    button, select {
       background: rgba(255,255,255,0.8);
       border: none;
-      padding: 10px 15px;
-      font-size: 14px;
+      padding: 6px 10px;
+      font-size: 12px;
       cursor: pointer;
       border-radius: 5px;
     }
+    input[type="file"] {
+      background: rgba(255,255,255,0.8);
+      border-radius: 5px;
+      padding: 6px 10px;
+      font-size: 12px;
+      display: none;
+    }
+    input[type="range"] {
+      flex-grow: 1;
+    }
     label {
       color: white;
-      font-size: 14px;
+      font-size: 12px;
       user-select: none;
+      margin-right: 5px;
     }
   </style>
 </head>
 <body>
 <div id="controls">
-  <select id="modeToggle">
+  <select id="modeToggle" style="width: 110px;">
     <option value="color">Color Mode</option>
     <option value="image">Image Mode</option>
   </select>
   <input type="file" accept="image/*" id="uploadInput" />
+</div>
+<div id="bottomControls">
   <label for="symmetrySlider">Symmetry:</label>
   <input type="range" id="symmetrySlider" min="2" max="16" value="8" />
   <button id="saveButton">Save Image</button>
@@ -212,6 +239,7 @@
   document.getElementById('modeToggle').addEventListener('change', (e) => {
     mode = e.target.value;
     uniforms.mode.value = mode === 'image' ? 1 : 0;
+    document.getElementById('uploadInput').style.display = (mode === 'image') ? 'inline-block' : 'none';
   });
 
   document.getElementById('symmetrySlider').addEventListener('input', (e) => {
