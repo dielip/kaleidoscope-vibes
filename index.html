@@ -47,24 +47,22 @@
   document.body.appendChild(renderer.domElement);
 
   let texture = new THREE.Texture();
+  let spinAngle = 0;
+  let spinSpeed = 0.6;
+
   let uniforms = {
     iTime: { value: 0 },
     iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
     iMouse: { value: new THREE.Vector2(0, 0) },
     zoom: { value: 1.0 },
     iTexture: { value: texture },
-    spinOffset: { value: 0.0 }
+    spinAngle: { value: 0.0 }
   };
 
   let lastDist = null;
   let lastX = null;
 
   // Mouse interaction
-  window.addEventListener('mousemove', e => {
-    uniforms.iMouse.value.x = e.clientX;
-    uniforms.iMouse.value.y = window.innerHeight - e.clientY;
-  });
-
   window.addEventListener('mousedown', e => {
     lastX = e.clientX;
   });
@@ -74,13 +72,16 @@
   });
 
   window.addEventListener('mousemove', e => {
+    uniforms.iMouse.value.x = e.clientX;
+    uniforms.iMouse.value.y = window.innerHeight - e.clientY;
     if (e.buttons === 1 && lastX !== null) {
       const dx = e.clientX - lastX;
-      uniforms.spinOffset.value += dx * 0.005; // adjust rotation speed sensitivity
+      spinSpeed += dx * 0.001; // adjust to control acceleration
       lastX = e.clientX;
     }
   });
 
+  // Touch interaction
   window.addEventListener('touchstart', e => {
     if (e.touches.length === 1) {
       uniforms.iMouse.value.x = e.touches[0].clientX;
@@ -92,7 +93,7 @@
   window.addEventListener('touchmove', e => {
     if (e.touches.length === 1 && lastX !== null) {
       const dx = e.touches[0].clientX - lastX;
-      uniforms.spinOffset.value += dx * 0.005;
+      spinSpeed += dx * 0.001;
       lastX = e.touches[0].clientX;
     }
     if (e.touches.length === 2) {
@@ -123,14 +124,14 @@
     uniform vec2 iMouse;
     uniform float zoom;
     uniform sampler2D iTexture;
-    uniform float spinOffset;
+    uniform float spinAngle;
 
     void main() {
       vec2 uv = (gl_FragCoord.xy - 0.5 * iResolution.xy) / (iResolution.y * zoom);
       vec2 mouse = (iMouse - 0.5 * iResolution.xy) / (iResolution.y * zoom);
 
       float r = length(uv);
-      float a = atan(uv.y, uv.x) + 0.6 * iTime + spinOffset; // faster spin + gesture offset
+      float a = atan(uv.y, uv.x) + spinAngle;
 
       float symmetry = 8.0;
       a = mod(a, 6.283185 / symmetry);
@@ -155,6 +156,9 @@
 
   function animate(time) {
     uniforms.iTime.value = time * 0.001;
+    spinAngle += spinSpeed * 0.016; // 60fps assumption
+    uniforms.spinAngle.value = spinAngle;
+    spinSpeed *= 0.98; // friction
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
   }
