@@ -1,4 +1,4 @@
-=<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -46,12 +46,15 @@
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  let texture = new THREE.Texture();
+  // Create a fallback texture (white pixel) in case no image is uploaded
+  const fallbackTexture = new THREE.DataTexture(new Uint8Array([255, 255, 255]), 1, 1, THREE.RGBFormat);
+  fallbackTexture.needsUpdate = true;
+
+  let texture = fallbackTexture;
   let spinAngle = 0;
   let spinSpeed = 0.6;
 
   let uniforms = {
-    iTime: { value: 0 },
     iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
     iMouse: { value: new THREE.Vector2(0, 0) },
     zoom: { value: 1.0 },
@@ -76,7 +79,7 @@
     uniforms.iMouse.value.y = window.innerHeight - e.clientY;
     if (e.buttons === 1 && lastX !== null) {
       const dx = e.clientX - lastX;
-      spinSpeed += dx * 0.001; // adjust to control acceleration
+      spinSpeed += dx * 0.001;
       lastX = e.clientX;
     }
   });
@@ -119,7 +122,6 @@
 
   const fragmentShader = `
     precision mediump float;
-    uniform float iTime;
     uniform vec2 iResolution;
     uniform vec2 iMouse;
     uniform float zoom;
@@ -128,8 +130,6 @@
 
     void main() {
       vec2 uv = (gl_FragCoord.xy - 0.5 * iResolution.xy) / (iResolution.y * zoom);
-      vec2 mouse = (iMouse - 0.5 * iResolution.xy) / (iResolution.y * zoom);
-
       float r = length(uv);
       float a = atan(uv.y, uv.x) + spinAngle;
 
@@ -154,9 +154,8 @@
   let mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
 
-  function animate(time) {
-    uniforms.iTime.value = time * 0.001;
-    spinAngle += spinSpeed * 0.016; // 60fps assumption
+  function animate() {
+    spinAngle += spinSpeed * 0.016;
     uniforms.spinAngle.value = spinAngle;
     spinSpeed *= 0.98; // friction
     renderer.render(scene, camera);
@@ -175,8 +174,9 @@
     if (!file) return;
     const img = new Image();
     img.onload = () => {
-      texture.image = img;
+      texture = new THREE.Texture(img);
       texture.needsUpdate = true;
+      uniforms.iTexture.value = texture;
     };
     img.src = URL.createObjectURL(file);
   });
