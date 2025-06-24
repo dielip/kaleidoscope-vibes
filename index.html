@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Kaleidoscope with Mode Toggle</title>
+  <title>Kaleidoscope with Controls</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     html, body {
@@ -25,13 +25,18 @@
       flex-direction: column;
       gap: 10px;
     }
-    button, input[type="file"], select {
+    button, input[type="file"], select, input[type="range"] {
       background: rgba(255,255,255,0.8);
       border: none;
       padding: 10px 15px;
       font-size: 14px;
       cursor: pointer;
       border-radius: 5px;
+    }
+    label {
+      color: white;
+      font-size: 14px;
+      user-select: none;
     }
   </style>
 </head>
@@ -42,13 +47,15 @@
     <option value="image">Image Mode</option>
   </select>
   <input type="file" accept="image/*" id="uploadInput" />
+  <label for="symmetrySlider">Symmetry:</label>
+  <input type="range" id="symmetrySlider" min="2" max="16" value="8" />
   <button id="saveButton">Save Image</button>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
 <script>
   let scene = new THREE.Scene();
   let camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  let renderer = new THREE.WebGLRenderer();
+  let renderer = new THREE.WebGLRenderer({ preserveDrawingBuffer: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
@@ -59,6 +66,7 @@
   let mode = 'color';
   let spinAngle = 0;
   let spinSpeed = 0.6;
+  let symmetryValue = 8;
 
   let uniforms = {
     iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
@@ -67,7 +75,8 @@
     iTexture: { value: texture },
     spinAngle: { value: 0.0 },
     iTime: { value: 0.0 },
-    mode: { value: 0 } // 0 for color, 1 for image
+    mode: { value: 0 },
+    symmetry: { value: symmetryValue }
   };
 
   let lastDist = null;
@@ -102,7 +111,7 @@
   window.addEventListener('touchmove', e => {
     if (e.touches.length === 1 && lastX !== null) {
       const dx = e.touches[0].clientX - lastX;
-      spinSpeed += dx * 0.05; // reduced from 0.1 to 0.05 for smoother mobile rotation
+      spinSpeed += dx * 0.05;
       lastX = e.touches[0].clientX;
     }
     if (e.touches.length === 2) {
@@ -132,6 +141,7 @@
     uniform sampler2D iTexture;
     uniform float iTime;
     uniform int mode;
+    uniform int symmetry;
 
     vec3 getColor(float val) {
       float r = 0.5 + 0.5 * cos(6.2831 * val + 0.0);
@@ -144,9 +154,9 @@
       vec2 uv = (gl_FragCoord.xy - 0.5 * iResolution.xy) / (iResolution.y * zoom);
       float r = length(uv);
       float a = atan(uv.y, uv.x);
-      float symmetry = 8.0;
-      a = mod(a, 6.283185 / symmetry);
-      a = abs(a - 3.141592 / symmetry);
+      float sym = float(symmetry);
+      a = mod(a, 6.283185 / sym);
+      a = abs(a - 3.141592 / sym);
       a += spinAngle;
       uv = vec2(cos(a), sin(a)) * r;
 
@@ -204,7 +214,13 @@
     uniforms.mode.value = mode === 'image' ? 1 : 0;
   });
 
+  document.getElementById('symmetrySlider').addEventListener('input', (e) => {
+    symmetryValue = parseInt(e.target.value, 10);
+    uniforms.symmetry.value = symmetryValue;
+  });
+
   document.getElementById('saveButton').addEventListener('click', () => {
+    renderer.render(scene, camera);
     const link = document.createElement('a');
     link.download = 'kaleidoscope_snapshot.png';
     link.href = renderer.domElement.toDataURL('image/png');
